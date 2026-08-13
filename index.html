@@ -308,24 +308,49 @@ function showError(msg){
   setTimeout(()=> errorBox.style.display='none', 5000);
 }
 
+// Orari di default: Lun/Mar/Gio/Ven solo cena, Sab/Dom pranzo+cena, Mer chiuso
+function defaultSchedule(){
+  const dinner = [{start:"18:00", end:"22:30"}];
+  const weekend = [{start:"13:00", end:"15:00"}, {start:"18:00", end:"22:30"}];
+  return {
+    0: weekend,  // Domenica
+    1: dinner,   // Lunedì
+    2: dinner,   // Martedì
+    3: [],       // Mercoledì (chiuso)
+    4: dinner,   // Giovedì
+    5: dinner,   // Venerdì
+    6: weekend   // Sabato
+  };
+}
+
+function generateSlotsForRanges(ranges){
+  const out = [];
+  (ranges||[]).forEach(r=>{
+    let [h,m] = r.start.split(':').map(Number);
+    const [eh,em] = r.end.split(':').map(Number);
+    while(h < eh || (h === eh && m <= em)){
+      out.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+      m += 30;
+      if(m >= 60){ m -= 60; h += 1; }
+    }
+  });
+  return out;
+}
+
 async function loadSettings(){
   const snap = await get(ref(db, "reservationSettings/general"));
   if(snap.exists()){
     const s = snap.val();
     settings = {
-      slotsLunch: s.slotsLunch || ["13:00","13:30","14:00","14:30"],
-      slotsDinner: s.slotsDinner || ["19:00","19:30","20:00","20:30","21:00","21:30","22:00"],
+      schedule: s.schedule || defaultSchedule(),
       maxCoversPerSlot: s.maxCoversPerSlot || 30,
-      closedWeekdays: s.closedWeekdays || [],
       closedDates: s.closedDates || []
     };
   } else {
     // valori di default se non hai ancora configurato nulla dal pannello admin
     settings = {
-      slotsLunch: ["13:00","13:30","14:00","14:30"],
-      slotsDinner: ["19:00","19:30","20:00","20:30","21:00","21:30","22:00"],
+      schedule: defaultSchedule(),
       maxCoversPerSlot: 30,
-      closedWeekdays: [],
       closedDates: []
     };
   }
@@ -335,8 +360,9 @@ function allSlotsForDate(dateStr){
   const d = new Date(dateStr + "T12:00:00");
   const weekday = d.getDay();
   if(settings.closedDates.includes(dateStr)) return { closed:true, slots:[] };
-  if(settings.closedWeekdays.includes(weekday)) return { closed:true, slots:[] };
-  return { closed:false, slots:[...settings.slotsLunch, ...settings.slotsDinner] };
+  const ranges = (settings.schedule && settings.schedule[weekday]) || [];
+  if(ranges.length === 0) return { closed:true, slots:[] };
+  return { closed:false, slots: generateSlotsForRanges(ranges) };
 }
 
 async function getReservationsForDate(dateStr){
