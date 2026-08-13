@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prenotazioni — Admin Teperino Fuerte</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F3EA; --ink:#1B1B1D; --primary:#0B4F6C; --primary-dk:#083A4F;
+    --accent:#E8543E; --gold:#F2A93B; --line:rgba(27,27,29,0.12); --card:#fff;
+    --ok:#2E7D32; --warn:#B3261E;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Work Sans',sans-serif;}
+  header{background:var(--primary);color:#fff;padding:20px 20px;display:flex;justify-content:space-between;align-items:center;}
+  header h1{font-family:'Fraunces',serif;font-size:22px;margin:0;font-weight:700;}
+  header .sub{font-size:12px;opacity:.75;}
+  .wrap{max-width:960px;margin:0 auto;padding:20px;}
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+  .tab{padding:9px 16px;border-radius:20px;background:#fff;border:1.5px solid var(--line);cursor:pointer;font-weight:600;font-size:14px;}
+  .tab.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px;}
+  .dateNav{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+  .dateNav input{padding:9px 12px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;}
+  .dateNav button{padding:8px 12px;border-radius:8px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-weight:600;}
+  table{width:100%;border-collapse:collapse;font-size:14px;}
+  th{text-align:left;padding:8px 8px;border-bottom:2px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#777;}
+  td{padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top;}
+  .badge{padding:3px 9px;border-radius:20px;font-size:12px;font-weight:700;display:inline-block;}
+  .badge.pending{background:#FFF4E5;color:#8a5a00;}
+  .badge.confirmed{background:#E6F4EA;color:var(--ok);}
+  .badge.cancelled{background:#FDECEA;color:var(--warn);}
+  .actions{display:flex;gap:6px;flex-wrap:wrap;}
+  .btn{padding:6px 10px;border-radius:7px;border:none;font-size:12.5px;font-weight:700;cursor:pointer;}
+  .btn.ok{background:var(--ok);color:#fff;}
+  .btn.warn{background:var(--warn);color:#fff;}
+  .btn.ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink);}
+  .summary{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap;}
+  .summary .stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 18px;min-width:120px;}
+  .summary .stat .num{font-family:'Fraunces',serif;font-size:26px;font-weight:700;color:var(--primary);}
+  .summary .stat .lbl{font-size:12px;color:#888;}
+  label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--primary-dk);}
+  input[type=number], input[type=text], input[type=date]{
+    width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid var(--line);font-size:14px;margin-bottom:14px;
+  }
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .chipRow{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .chip{padding:7px 12px;border-radius:18px;border:1.5px solid var(--line);font-size:13px;cursor:pointer;background:#fff;}
+  .chip.on{background:var(--primary);color:#fff;border-color:var(--primary);}
+  .slotList{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;}
+  .slotTag{background:#fff;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;display:flex;align-items:center;gap:6px;}
+  .slotTag button{border:none;background:none;color:var(--warn);cursor:pointer;font-weight:700;}
+  .addSlotRow{display:flex;gap:8px;margin-bottom:16px;}
+  .addSlotRow input{margin-bottom:0;flex:1;}
+  .addSlotRow button{padding:9px 14px;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;}
+  .saveBar{position:sticky;bottom:0;background:var(--bg);padding:14px 0 4px;}
+  .saveBtn{width:100%;padding:14px;border:none;border-radius:12px;background:var(--accent);color:#fff;font-weight:700;font-size:15px;cursor:pointer;}
+  .pinScreen{display:flex;align-items:center;justify-content:center;min-height:90vh;flex-direction:column;gap:14px;}
+  .pinScreen input{width:160px;text-align:center;font-size:22px;letter-spacing:.3em;padding:12px;border-radius:10px;border:1.5px solid var(--line);}
+  .pinScreen button{padding:12px 24px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-weight:700;cursor:pointer;}
+  .hidden{display:none;}
+  .empty{color:#999;font-size:14px;padding:20px 0;text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="pinScreen" id="pinScreen">
+  <div style="font-family:'Fraunces',serif;font-size:22px;font-weight:700;color:var(--primary);">Teperino Fuerte — Admin</div>
+  <input type="password" id="pinInput" maxlength="6" placeholder="PIN">
+  <button onclick="checkPin()">Entra</button>
+  <div id="pinError" style="color:var(--warn);font-size:13px;"></div>
+</div>
+
+<div id="mainApp" class="hidden">
+<header>
+  <div>
+    <h1>Prenotazioni</h1>
+    <div class="sub">Teperino Fuerte · El Cotillo</div>
+  </div>
+  <div class="sub" id="todayLabel"></div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-tab="oggi">Giorno</div>
+    <div class="tab" data-tab="tutte">Tutte le prenotazioni</div>
+    <div class="tab" data-tab="impostazioni">Impostazioni</div>
+  </div>
+
+  <!-- TAB GIORNO -->
+  <div id="tab-oggi">
+    <div class="dateNav">
+      <button onclick="shiftDay(-1)">←</button>
+      <input type="date" id="dayPicker">
+      <button onclick="shiftDay(1)">→</button>
+      <button onclick="setToday()">Oggi</button>
+    </div>
+    <div class="summary" id="daySummary"></div>
+    <div class="card">
+      <table id="dayTable">
+        <thead><tr><th>Ora</th><th>Nome</th><th>Coperti</th><th>Contatto</th><th>Note</th><th>Stato</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty hidden" id="dayEmpty">Nessuna prenotazione per questa data.</div>
+    </div>
+  </div>
+
+  <!-- TAB TUTTE -->
+  <div id="tab-tutte" class="hidden">
+    <div class="card">
+      <table id="allTable">
+        <thead><tr><th>Data</th><th>Ora</th><th>Nome</th><th>Coperti</th><th>Contatto</th><th>Stato</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+      <div class="empty hidden" id="allEmpty">Nessuna prenotazione.</div>
+    </div>
+  </div>
+
+  <!-- TAB IMPOSTAZIONI -->
+  <div id="tab-impostazioni" class="hidden">
+    <div class="card">
+      <label>Capienza massima coperti per fascia oraria</label>
+      <input type="number" id="maxCovers" min="1">
+
+      <label>Orari per giorno della settimana</label>
+      <div id="scheduleEditor"></div>
+
+      <label style="margin-top:8px;">Date di chiusura specifiche (es. ferie, eventi)</label>
+      <div class="addSlotRow">
+        <input type="date" id="newClosedDate">
+        <button onclick="addClosedDate()">Aggiungi</button>
+      </div>
+      <div class="slotList" id="closedDatesList"></div>
+    </div>
+    <div class="saveBar">
+      <button class="saveBtn" onclick="saveSettings()">Salva impostazioni</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, get, set, update, query, orderByChild, equalTo }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ====== STESSA CONFIGURAZIONE FIREBASE DEL POS ======
+const firebaseConfig = {
+  apiKey: "AIzaSyBSE993oDGNCU7U1Ni7cAUhBDjog0BBZxE",
+  authDomain: "cassa-teperino.firebaseapp.com",
+  databaseURL: "https://cassa-teperino-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cassa-teperino",
+  storageBucket: "cassa-teperino.firebasestorage.app",
+  messagingSenderId: "331086703077",
+  appId: "1:331086703077:web:9375d4c91e3bc97482270c"
+};
+const ADMIN_PIN = "1969"; // cambia se vuoi un PIN diverso da quello dell'app HACCP
+// =====================================================================
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.checkPin = function(){
+  const val = document.getElementById('pinInput').value;
+  if(val === ADMIN_PIN){
+    document.getElementById('pinScreen').classList.add('hidden');
+    document.getElementById('mainApp').classList.remove('hidden');
+    init();
+  } else {
+    document.getElementById('pinError').textContent = 'PIN errato';
+  }
+};
+
+let settings = null;
+const weekdayNames = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+
+function init(){
+  document.getElementById('todayLabel').textContent = new Date().toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+  document.querySelectorAll('.tab').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      ['oggi','tutte','impostazioni'].forEach(id=>{
+        document.getElementById('tab-'+id).classList.toggle('hidden', id !== t.dataset.tab);
+      });
+      if(t.dataset.tab === 'tutte') loadAll();
+    });
+  });
+
+  const dayPicker = document.getElementById('dayPicker');
+  dayPicker.value = new Date().toISOString().split('T')[0];
+  dayPicker.addEventListener('change', loadDay);
+
+  loadSettingsAndRender();
+  loadDay();
+}
+
+window.setToday = function(){
+  document.getElementById('dayPicker').value = new Date().toISOString().split('T')[0];
+  loadDay();
+};
+window.shiftDay = function(delta){
+  const dp = document.getElementById('dayPicker');
+  const d = new Date(dp.value + "T12:00:00");
+  d.setDate(d.getDate()+delta);
+  dp.value = d.toISOString().split('T')[0];
+  loadDay();
+};
+
+async function loadDay(){
+  const dateStr = document.getElementById('dayPicker').value;
+  const q = query(ref(db,"reservations"), orderByChild("date"), equalTo(dateStr));
+  const snap = await get(q);
+  const rows = [];
+  if(snap.exists()){
+    snap.forEach(child=>{ rows.push({id:child.key, ...child.val()}); });
+  }
+  rows.sort((a,b)=> (a.time||'').localeCompare(b.time||''));
+
+  const tbody = document.querySelector('#dayTable tbody');
+  tbody.innerHTML = '';
+  document.getElementById('dayEmpty').classList.toggle('hidden', rows.length>0);
+
+  let totalCovers=0, pending=0, confirmed=0;
+  rows.forEach(r=>{
+    totalCovers += Number(r.people)||0;
+    if(r.status==='pending') pending++;
+    if(r.status==='confirmed') confirmed++;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><b>${r.time||'-'}</b></td>
+      <td>${r.name||'-'}</td>
+      <td>${r.people||'-'}</td>
+      <td>${r.phone||'-'}${r.email? '<br><span style="color:#999;font-size:12px;">'+r.email+'</span>':''}</td>
+      <td style="max-width:160px;font-size:13px;color:#666;">${r.notes||'-'}</td>
+      <td><span class="badge ${r.status||''}">${r.status||'sconosciuto'}</span></td>
+      <td class="actions">
+        ${r.status!=='confirmed' ? `<button class="btn ok" data-act="confirm" data-id="${r.id}">Conferma</button>`:''}
+        ${r.status!=='cancelled' ? `<button class="btn warn" data-act="cancel" data-id="${r.id}">Cancella</button>`:''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('daySummary').innerHTML = `
+    <div class="stat"><div class="num">${rows.length}</div><div class="lbl">Prenotazioni</div></div>
+    <div class="stat"><div class="num">${totalCovers}</div><div class="lbl">Coperti totali</div></div>
+    <div class="stat"><div class="num">${pending}</div><div class="lbl">Da confermare</div></div>
+    <div class="stat"><div class="num">${confirmed}</div><div class="lbl">Confermate</div></div>
+  `;
+
+  tbody.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=> handleAction(b.dataset.id, b.dataset.act, loadDay));
+  });
+}
+
+async function loadAll(){
+  const snap = await get(ref(db,"reservations"));
+  const rows = [];
+  if(snap.exists()){
+    snap.forEach(child=>{ rows.push({id:child.key, ...child.val()}); });
+  }
+  rows.sort((a,b)=> ((b.date||'')+(b.time||'')).localeCompare((a.date||'')+(a.time||'')));
+
+  const tbody = document.querySelector('#allTable tbody');
+  tbody.innerHTML = '';
+  document.getElementById('allEmpty').classList.toggle('hidden', rows.length>0);
+
+  rows.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.date||'-'}</td>
+      <td><b>${r.time||'-'}</b></td>
+      <td>${r.name||'-'}</td>
+      <td>${r.people||'-'}</td>
+      <td>${r.phone||'-'}</td>
+      <td><span class="badge ${r.status||''}">${r.status||'sconosciuto'}</span></td>
+      <td class="actions">
+        ${r.status!=='confirmed' ? `<button class="btn ok" data-act="confirm" data-id="${r.id}">Conferma</button>`:''}
+        ${r.status!=='cancelled' ? `<button class="btn warn" data-act="cancel" data-id="${r.id}">Cancella</button>`:''}
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('button').forEach(b=>{
+    b.addEventListener('click', ()=> handleAction(b.dataset.id, b.dataset.act, loadAll));
+  });
+}
+
+async function handleAction(id, act, refreshFn){
+  const status = act === 'confirm' ? 'confirmed' : 'cancelled';
+  await update(ref(db,"reservations/"+id), { status });
+  refreshFn();
+}
+
+// ---------- IMPOSTAZIONI ----------
+function defaultSchedule(){
+  const dinner = [{start:"18:00", end:"22:30"}];
+  const weekend = [{start:"13:00", end:"15:00"}, {start:"18:00", end:"22:30"}];
+  return { 0: weekend, 1: dinner, 2: dinner, 3: [], 4: dinner, 5: dinner, 6: weekend };
+}
+
+async function loadSettingsAndRender(){
+  const snap = await get(ref(db,"reservationSettings/general"));
+  if(snap.exists()){
+    const s = snap.val();
+    settings = {
+      schedule: s.schedule || defaultSchedule(),
+      maxCoversPerSlot: s.maxCoversPerSlot || 30,
+      closedDates: s.closedDates || []
+    };
+  } else {
+    settings = {
+      schedule: defaultSchedule(),
+      maxCoversPerSlot: 30,
+      closedDates: []
+    };
+  }
+  renderSettings();
+}
+
+function renderSettings(){
+  document.getElementById('maxCovers').value = settings.maxCoversPerSlot;
+  renderScheduleEditor();
+  renderClosedDates();
+}
+
+function renderScheduleEditor(){
+  const box = document.getElementById('scheduleEditor');
+  box.innerHTML = '';
+  weekdayNames.forEach((name, idx)=>{
+    const ranges = settings.schedule[idx] || [];
+    const dayCard = document.createElement('div');
+    dayCard.style.cssText = 'border:1.5px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;';
+    dayCard.innerHTML = `
+      <div style="font-weight:700;margin-bottom:8px;">${name}${ranges.length===0 ? ' <span style="color:#999;font-weight:400;font-size:12.5px;">(chiuso)</span>' : ''}</div>
+      <div class="slotList" data-day="${idx}"></div>
+      <div class="addSlotRow">
+        <input type="text" placeholder="da (es. 18:00)" data-day="${idx}" data-role="start" style="max-width:110px;">
+        <input type="text" placeholder="a (es. 22:30)" data-day="${idx}" data-role="end" style="max-width:110px;">
+        <button data-day="${idx}">+</button>
+      </div>`;
+    box.appendChild(dayCard);
+
+    const list = dayCard.querySelector('.slotList');
+    ranges.forEach((r, ri)=>{
+      const tag = document.createElement('div');
+      tag.className = 'slotTag';
+      tag.innerHTML = `${r.start}–${r.end} <button>&times;</button>`;
+      tag.querySelector('button').addEventListener('click', ()=>{
+        settings.schedule[idx].splice(ri,1);
+        renderScheduleEditor();
+      });
+      list.appendChild(tag);
+    });
+
+    dayCard.querySelector('button[data-day]').addEventListener('click', ()=>{
+      const startInput = dayCard.querySelector('input[data-role="start"]');
+      const endInput = dayCard.querySelector('input[data-role="end"]');
+      const start = startInput.value.trim();
+      const end = endInput.value.trim();
+      if(!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)){
+        alert('Formato orario non valido, usa HH:MM'); return;
+      }
+      if(!settings.schedule[idx]) settings.schedule[idx] = [];
+      settings.schedule[idx].push({start, end});
+      renderScheduleEditor();
+    });
+  });
+}
+
+window.addClosedDate = function(){
+  const val = document.getElementById('newClosedDate').value;
+  if(!val) return;
+  if(!settings.closedDates.includes(val)) settings.closedDates.push(val);
+  document.getElementById('newClosedDate').value = '';
+  renderClosedDates();
+};
+function renderClosedDates(){
+  const box = document.getElementById('closedDatesList');
+  box.innerHTML = '';
+  settings.closedDates.sort().forEach(d=>{
+    const tag = document.createElement('div');
+    tag.className = 'slotTag';
+    tag.innerHTML = `${d} <button>&times;</button>`;
+    tag.querySelector('button').addEventListener('click', ()=>{
+      settings.closedDates = settings.closedDates.filter(x=>x!==d);
+      renderClosedDates();
+    });
+    box.appendChild(tag);
+  });
+}
+
+window.saveSettings = async function(){
+  settings.maxCoversPerSlot = Number(document.getElementById('maxCovers').value) || settings.maxCoversPerSlot;
+  await set(ref(db,"reservationSettings/general"), settings);
+  alert('Impostazioni salvate.');
+};
+</script>
+</body>
+</html>
