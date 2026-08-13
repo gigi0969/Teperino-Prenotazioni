@@ -123,24 +123,10 @@
       <label>Capienza massima coperti per fascia oraria</label>
       <input type="number" id="maxCovers" min="1">
 
-      <label>Orari pranzo</label>
-      <div class="slotList" id="lunchSlots"></div>
-      <div class="addSlotRow">
-        <input type="text" id="newLunchSlot" placeholder="es. 13:30">
-        <button onclick="addSlot('lunch')">Aggiungi</button>
-      </div>
+      <label>Orari per giorno della settimana</label>
+      <div id="scheduleEditor"></div>
 
-      <label>Orari cena</label>
-      <div class="slotList" id="dinnerSlots"></div>
-      <div class="addSlotRow">
-        <input type="text" id="newDinnerSlot" placeholder="es. 20:30">
-        <button onclick="addSlot('dinner')">Aggiungi</button>
-      </div>
-
-      <label>Giorni di chiusura fissi</label>
-      <div class="chipRow" id="weekdayChips"></div>
-
-      <label>Date di chiusura specifiche (es. ferie, eventi)</label>
+      <label style="margin-top:8px;">Date di chiusura specifiche (es. ferie, eventi)</label>
       <div class="addSlotRow">
         <input type="date" id="newClosedDate">
         <button onclick="addClosedDate()">Aggiungi</button>
@@ -308,23 +294,25 @@ async function handleAction(id, act, refreshFn){
 }
 
 // ---------- IMPOSTAZIONI ----------
+function defaultSchedule(){
+  const dinner = [{start:"18:00", end:"22:30"}];
+  const weekend = [{start:"13:00", end:"15:00"}, {start:"18:00", end:"22:30"}];
+  return { 0: weekend, 1: dinner, 2: dinner, 3: [], 4: dinner, 5: dinner, 6: weekend };
+}
+
 async function loadSettingsAndRender(){
   const snap = await get(ref(db,"reservationSettings/general"));
   if(snap.exists()){
     const s = snap.val();
     settings = {
-      slotsLunch: s.slotsLunch || ["13:00","13:30","14:00","14:30"],
-      slotsDinner: s.slotsDinner || ["19:00","19:30","20:00","20:30","21:00","21:30","22:00"],
+      schedule: s.schedule || defaultSchedule(),
       maxCoversPerSlot: s.maxCoversPerSlot || 30,
-      closedWeekdays: s.closedWeekdays || [],
       closedDates: s.closedDates || []
     };
   } else {
     settings = {
-      slotsLunch: ["13:00","13:30","14:00","14:30"],
-      slotsDinner: ["19:00","19:30","20:00","20:30","21:00","21:30","22:00"],
+      schedule: defaultSchedule(),
       maxCoversPerSlot: 30,
-      closedWeekdays: [],
       closedDates: []
     };
   }
@@ -333,54 +321,51 @@ async function loadSettingsAndRender(){
 
 function renderSettings(){
   document.getElementById('maxCovers').value = settings.maxCoversPerSlot;
-  renderSlotList('lunch');
-  renderSlotList('dinner');
-  renderWeekdayChips();
+  renderScheduleEditor();
   renderClosedDates();
 }
 
-function renderSlotList(kind){
-  const key = kind==='lunch' ? 'slotsLunch' : 'slotsDinner';
-  const box = document.getElementById(kind+'Slots');
-  box.innerHTML = '';
-  settings[key].sort().forEach(t=>{
-    const tag = document.createElement('div');
-    tag.className = 'slotTag';
-    tag.innerHTML = `${t} <button>&times;</button>`;
-    tag.querySelector('button').addEventListener('click', ()=>{
-      settings[key] = settings[key].filter(x=>x!==t);
-      renderSlotList(kind);
-    });
-    box.appendChild(tag);
-  });
-}
-window.addSlot = function(kind){
-  const inputId = kind==='lunch' ? 'newLunchSlot' : 'newDinnerSlot';
-  const input = document.getElementById(inputId);
-  const val = input.value.trim();
-  if(!/^\d{2}:\d{2}$/.test(val)){ alert('Formato orario non valido, usa HH:MM'); return; }
-  const key = kind==='lunch' ? 'slotsLunch' : 'slotsDinner';
-  if(!settings[key].includes(val)) settings[key].push(val);
-  input.value = '';
-  renderSlotList(kind);
-};
-
-function renderWeekdayChips(){
-  const box = document.getElementById('weekdayChips');
+function renderScheduleEditor(){
+  const box = document.getElementById('scheduleEditor');
   box.innerHTML = '';
   weekdayNames.forEach((name, idx)=>{
-    const chip = document.createElement('div');
-    chip.className = 'chip' + (settings.closedWeekdays.includes(idx) ? ' on' : '');
-    chip.textContent = name;
-    chip.addEventListener('click', ()=>{
-      if(settings.closedWeekdays.includes(idx)){
-        settings.closedWeekdays = settings.closedWeekdays.filter(x=>x!==idx);
-      } else {
-        settings.closedWeekdays.push(idx);
-      }
-      renderWeekdayChips();
+    const ranges = settings.schedule[idx] || [];
+    const dayCard = document.createElement('div');
+    dayCard.style.cssText = 'border:1.5px solid var(--line);border-radius:10px;padding:12px;margin-bottom:10px;';
+    dayCard.innerHTML = `
+      <div style="font-weight:700;margin-bottom:8px;">${name}${ranges.length===0 ? ' <span style="color:#999;font-weight:400;font-size:12.5px;">(chiuso)</span>' : ''}</div>
+      <div class="slotList" data-day="${idx}"></div>
+      <div class="addSlotRow">
+        <input type="text" placeholder="da (es. 18:00)" data-day="${idx}" data-role="start" style="max-width:110px;">
+        <input type="text" placeholder="a (es. 22:30)" data-day="${idx}" data-role="end" style="max-width:110px;">
+        <button data-day="${idx}">+</button>
+      </div>`;
+    box.appendChild(dayCard);
+
+    const list = dayCard.querySelector('.slotList');
+    ranges.forEach((r, ri)=>{
+      const tag = document.createElement('div');
+      tag.className = 'slotTag';
+      tag.innerHTML = `${r.start}–${r.end} <button>&times;</button>`;
+      tag.querySelector('button').addEventListener('click', ()=>{
+        settings.schedule[idx].splice(ri,1);
+        renderScheduleEditor();
+      });
+      list.appendChild(tag);
     });
-    box.appendChild(chip);
+
+    dayCard.querySelector('button[data-day]').addEventListener('click', ()=>{
+      const startInput = dayCard.querySelector('input[data-role="start"]');
+      const endInput = dayCard.querySelector('input[data-role="end"]');
+      const start = startInput.value.trim();
+      const end = endInput.value.trim();
+      if(!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)){
+        alert('Formato orario non valido, usa HH:MM'); return;
+      }
+      if(!settings.schedule[idx]) settings.schedule[idx] = [];
+      settings.schedule[idx].push({start, end});
+      renderScheduleEditor();
+    });
   });
 }
 
