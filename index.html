@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prenota — Teperino Fuerte, El Cotillo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F7F3EA;
+    --ink:#1B1B1D;
+    --primary:#0B4F6C;
+    --primary-dk:#083A4F;
+    --accent:#E8543E;
+    --gold:#F2A93B;
+    --line: rgba(27,27,29,0.12);
+    --card:#FFFFFF;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  .wrap{max-width:560px;margin:0 auto;padding:0 20px 60px;}
+  header{
+    background:var(--primary);
+    color:#fff;
+    padding:44px 20px 60px;
+    text-align:center;
+    position:relative;
+  }
+  header .eyebrow{
+    font-size:12px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    opacity:.75;
+    margin-bottom:10px;
+  }
+  header h1{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    font-size:clamp(30px,7vw,42px);
+    margin:0 0 8px;
+    line-height:1.05;
+  }
+  header p{
+    margin:0;
+    opacity:.85;
+    font-size:15px;
+  }
+  .wave{display:block;width:100%;height:auto;margin-bottom:-1px;}
+  .card{
+    background:var(--card);
+    border-radius:18px;
+    box-shadow:0 12px 30px rgba(11,79,108,0.10);
+    padding:26px;
+    margin-top:-40px;
+    position:relative;
+    border:1px solid var(--line);
+  }
+  .field{margin-bottom:18px;}
+  label{
+    display:block;
+    font-size:13px;
+    font-weight:600;
+    margin-bottom:6px;
+    color:var(--primary-dk);
+  }
+  input, select, textarea{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    font-family:'Work Sans', sans-serif;
+    font-size:15px;
+    background:#fff;
+    color:var(--ink);
+    transition:border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--primary);
+  }
+  textarea{resize:vertical;min-height:70px;}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  .slots{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(78px,1fr));
+    gap:8px;
+    margin-top:4px;
+  }
+  .slot-btn{
+    padding:10px 6px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:#fff;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    text-align:center;
+    color:var(--ink);
+  }
+  .slot-btn.selected{
+    background:var(--primary);
+    border-color:var(--primary);
+    color:#fff;
+  }
+  .slot-btn.full{
+    opacity:.35;
+    text-decoration:line-through;
+    cursor:not-allowed;
+  }
+  .slot-empty{
+    grid-column:1/-1;
+    font-size:14px;
+    color:#777;
+    padding:8px 0;
+  }
+  .submit-btn{
+    width:100%;
+    padding:15px;
+    border:none;
+    border-radius:12px;
+    background:var(--accent);
+    color:#fff;
+    font-size:16px;
+    font-weight:700;
+    letter-spacing:.01em;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .submit-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .submit-btn:active{transform:translateY(1px);}
+  .note{font-size:12.5px;color:#7a7a7a;margin-top:10px;line-height:1.5;}
+  .success{
+    text-align:center;
+    padding:20px 6px;
+  }
+  .success .icon{
+    width:56px;height:56px;border-radius:50%;
+    background:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto 18px;
+    font-size:28px;color:#fff;
+  }
+  .success h2{
+    font-family:'Fraunces', serif;
+    font-size:24px;
+    margin:0 0 8px;
+  }
+  .success p{color:#555;font-size:15px;line-height:1.5;}
+  .error-msg{
+    background:#FDECEA;
+    color:#B3261E;
+    padding:10px 14px;
+    border-radius:10px;
+    font-size:14px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .closed-msg{
+    background:#FFF4E5;
+    color:#8a5a00;
+    padding:10px 14px;
+    border-radius:10px;
+    font-size:14px;
+    margin-top:8px;
+  }
+  footer{
+    text-align:center;
+    font-size:12px;
+    color:#9a9a9a;
+    margin-top:26px;
+  }
+  a.tel{color:var(--primary);font-weight:600;text-decoration:none;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">El Cotillo · Fuerteventura</div>
+  <h1>Teperino Fuerte</h1>
+  <p>Prenota il tuo tavolo in riva all'Atlantico</p>
+</header>
+<svg class="wave" viewBox="0 0 500 40" preserveAspectRatio="none" style="background:var(--primary)">
+  <path d="M0,20 C120,45 180,0 250,15 C320,30 380,5 500,18 L500,0 L0,0 Z" fill="var(--bg)"/>
+</svg>
+
+<div class="wrap">
+  <div class="card">
+
+    <div id="errorBox" class="error-msg"></div>
+
+    <form id="bookingForm">
+      <div class="field">
+        <label for="date">Data</label>
+        <input type="date" id="date" required>
+        <div id="closedNote"></div>
+      </div>
+
+      <div class="field">
+        <label>Orario</label>
+        <div class="slots" id="slotsBox">
+          <div class="slot-empty">Scegli prima una data</div>
+        </div>
+      </div>
+
+      <div class="row2">
+        <div class="field">
+          <label for="people">Coperti</label>
+          <select id="people" required>
+            <option value="">-</option>
+            <script>for(let i=1;i<=12;i++)document.write('<option value="'+i+'">'+i+(i===1?' persona':' persone')+'</option>')</script>
+          </select>
+        </div>
+        <div class="field">
+          <label for="phone">Telefono</label>
+          <input type="tel" id="phone" placeholder="+34 600 000 000" required>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="name">Nome e cognome</label>
+        <input type="text" id="name" required>
+      </div>
+
+      <div class="field">
+        <label for="email">Email <span style="font-weight:400;color:#999;">(opzionale)</span></label>
+        <input type="email" id="email">
+      </div>
+
+      <div class="field">
+        <label for="notes">Note <span style="font-weight:400;color:#999;">(allergie, seggiolone, ecc.)</span></label>
+        <textarea id="notes"></textarea>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Prenota il tavolo</button>
+      <div class="note">Riceverai una conferma. In caso di ritardo superiore a 15 minuti, il tavolo potrebbe essere riassegnato.</div>
+    </form>
+
+    <div class="success" id="closedBox" style="display:none;">
+      <div class="icon" style="background:var(--accent);">✕</div>
+      <h2>Reservas online cerradas</h2>
+      <p>En este momento no aceptamos reservas por internet.</p>
+      <p style="margin-top:14px;">Llámanos al <a class="tel" href="tel:+34646820078">+34 646 820 078</a></p>
+      <p style="font-size:13px;color:#888;margin-top:14px;">Prenotazioni online momentaneamente chiuse. Chiamaci al numero qui sopra.</p>
+    </div>
+
+    <div class="success" id="successBox" style="display:none;">
+      <div class="icon">✓</div>
+      <h2>Prenotazione ricevuta!</h2>
+      <p id="successDetail"></p>
+      <p style="margin-top:14px;">Per modifiche urgenti chiamaci al <a class="tel" href="tel:+34646820078">+34 646 820 078</a></p>
+    </div>
+
+  </div>
+
+  <footer>Teperino Fuerte · Calle ... El Cotillo, Fuerteventura</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  if(typeof emailjs !== 'undefined'){
+    emailjs.init("mLHtEDkWM1RTATylU");
+  }
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, push, get, query, orderByChild, equalTo, serverTimestamp }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+// ====== CONFIGURAZIONE PROGETTO FIREBASE (stesso del POS) ======
+const firebaseConfig = {
+  apiKey: "AIzaSyBSE993oDGNCU7U1Ni7cAUhBDjog0BBZxE",
+  authDomain: "cassa-teperino.firebaseapp.com",
+  databaseURL: "https://cassa-teperino-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "cassa-teperino",
+  storageBucket: "cassa-teperino.firebasestorage.app",
+  messagingSenderId: "331086703077",
+  appId: "1:331086703077:web:9375d4c91e3bc97482270c"
+};
+// ======================================================
+
+// ====== EMAILJS (notifica email ad ogni prenotazione) ======
+const EMAILJS_PUBLIC_KEY = "mLHtEDkWM1RTATylU";
+const EMAILJS_SERVICE_ID = "service_97btwgi";
+const EMAILJS_TEMPLATE_ID = "template_aka6vs8";
+const NOTIFY_EMAIL = "ltepe69@gmail.com";
+// =============================================================
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+const dateInput = document.getElementById('date');
+const slotsBox = document.getElementById('slotsBox');
+const closedNote = document.getElementById('closedNote');
+const form = document.getElementById('bookingForm');
+const submitBtn = document.getElementById('submitBtn');
+const errorBox = document.getElementById('errorBox');
+
+let selectedSlot = null;
+let settings = null;
+
+const todayStr = new Date().toISOString().split('T')[0];
+dateInput.min = todayStr;
+dateInput.value = todayStr;
+
+function showError(msg){
+  errorBox.textContent = msg;
+  errorBox.style.display = 'block';
+  setTimeout(()=> errorBox.style.display='none', 5000);
+}
+
+// Orari di default: Lun/Mar/Gio/Ven solo cena, Sab/Dom pranzo+cena, Mer chiuso
+function defaultSchedule(){
+  const dinner = [{start:"18:00", end:"22:30"}];
+  const weekend = [{start:"13:00", end:"15:00"}, {start:"18:00", end:"22:30"}];
+  return {
+    0: weekend,  // Domenica
+    1: dinner,   // Lunedì
+    2: dinner,   // Martedì
+    3: [],       // Mercoledì (chiuso)
+    4: dinner,   // Giovedì
+    5: dinner,   // Venerdì
+    6: weekend   // Sabato
+  };
+}
+
+function generateSlotsForRanges(ranges){
+  const out = [];
+  (ranges||[]).forEach(r=>{
+    let [h,m] = r.start.split(':').map(Number);
+    const [eh,em] = r.end.split(':').map(Number);
+    while(h < eh || (h === eh && m <= em)){
+      out.push(String(h).padStart(2,'0')+':'+String(m).padStart(2,'0'));
+      m += 30;
+      if(m >= 60){ m -= 60; h += 1; }
+    }
+  });
+  return out;
+}
+
+async function loadSettings(){
+  const snap = await get(ref(db, "reservationSettings/general"));
+  if(snap.exists()){
+    const s = snap.val();
+    settings = {
+      schedule: s.schedule || defaultSchedule(),
+      maxCoversPerSlot: s.maxCoversPerSlot || 30,
+      closedDates: s.closedDates || [],
+      bookingsOpen: s.bookingsOpen !== false   // default: aperte
+    };
+  } else {
+    settings = {
+      schedule: defaultSchedule(),
+      maxCoversPerSlot: 30,
+      closedDates: [],
+      bookingsOpen: true
+    };
+  }
+}
+
+function allSlotsForDate(dateStr){
+  const d = new Date(dateStr + "T12:00:00");
+  const weekday = d.getDay();
+  if(settings.closedDates.includes(dateStr)) return { closed:true, slots:[] };
+  const ranges = (settings.schedule && settings.schedule[weekday]) || [];
+  if(ranges.length === 0) return { closed:true, slots:[] };
+  return { closed:false, slots: generateSlotsForRanges(ranges) };
+}
+
+async function getReservationsForDate(dateStr){
+  const q = query(ref(db, "reservations"), orderByChild("date"), equalTo(dateStr));
+  const snap = await get(q);
+  const list = [];
+  if(snap.exists()){
+    snap.forEach(child=>{
+      list.push({ id: child.key, ...child.val() });
+    });
+  }
+  return list;
+}
+
+async function renderSlots(){
+  selectedSlot = null;
+  slotsBox.innerHTML = '<div class="slot-empty">Caricamento orari...</div>';
+  closedNote.innerHTML = '';
+  const dateStr = dateInput.value;
+  if(!dateStr) return;
+
+  const { closed, slots } = allSlotsForDate(dateStr);
+  if(closed){
+    slotsBox.innerHTML = '';
+    closedNote.innerHTML = '<div class="closed-msg">Siamo chiusi in questa data. Scegli un altro giorno.</div>';
+    return;
+  }
+
+  const reservations = await getReservationsForDate(dateStr);
+  const covers = {};
+  reservations.forEach(r=>{
+    if(r.status === 'pending' || r.status === 'confirmed'){
+      covers[r.time] = (covers[r.time]||0) + Number(r.people);
+    }
+  });
+
+  slotsBox.innerHTML = '';
+  slots.forEach(t=>{
+    const used = covers[t] || 0;
+    const full = used >= settings.maxCoversPerSlot;
+    const btn = document.createElement('div');
+    btn.className = 'slot-btn' + (full ? ' full' : '');
+    btn.textContent = t;
+    if(!full){
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.slot-btn').forEach(b=>b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedSlot = t;
+      });
+    }
+    slotsBox.appendChild(btn);
+  });
+}
+
+dateInput.addEventListener('change', renderSlots);
+
+form.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!selectedSlot){
+    showError('Seleziona un orario disponibile.');
+    return;
+  }
+  const payload = {
+    date: dateInput.value,
+    time: selectedSlot,
+    people: Number(document.getElementById('people').value),
+    name: document.getElementById('name').value.trim(),
+    phone: document.getElementById('phone').value.trim(),
+    email: document.getElementById('email').value.trim(),
+    notes: document.getElementById('notes').value.trim(),
+    status: 'pending',
+    createdAt: Date.now()
+  };
+  if(!payload.people || !payload.name || !payload.phone){
+    showError('Compila tutti i campi obbligatori.');
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Invio in corso...';
+
+  try{
+    // ricontrolla capienza al momento dell'invio (evita doppie prenotazioni simultanee)
+    const reservations = await getReservationsForDate(payload.date);
+    let used = 0;
+    reservations.forEach(r=>{
+      if(r.time === payload.time && (r.status==='pending'||r.status==='confirmed')) used += Number(r.people);
+    });
+    if(used + payload.people > settings.maxCoversPerSlot){
+      showError('Questo orario si è appena riempito, scegline un altro.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Prenota il tavolo';
+      renderSlots();
+      return;
+    }
+
+    await push(ref(db, "reservations"), payload);
+
+    // notifica email via EmailJS
+    try{
+      if(window.emailjs){
+        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+          nome_cliente: payload.name,
+          telefono: payload.phone,
+          email: payload.email,
+          data: payload.date,
+          ora: payload.time,
+          numero_persone: payload.people,
+          note: payload.notes
+        });
+      }
+    }catch(mailErr){
+      console.warn('Email non inviata:', mailErr);
+    }
+
+    document.getElementById('successDetail').textContent =
+      `${payload.name}, tavolo per ${payload.people} il ${payload.date} alle ${payload.time}.`;
+    form.style.display = 'none';
+    document.getElementById('successBox').style.display = 'block';
+  }catch(err){
+    console.error(err);
+    showError('Errore durante l\'invio. Riprova o chiamaci direttamente.');
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Prenota il tavolo';
+  }
+});
+
+// Avvio: se le prenotazioni sono chiuse, nascondo il form e mostro il messaggio
+loadSettings().then(()=>{
+  if(settings.bookingsOpen === false){
+    form.style.display = 'none';
+    document.getElementById('closedBox').style.display = 'block';
+    return;
+  }
+  renderSlots();
+});
+</script>
+
+</body>
+</html>
