@@ -243,14 +243,6 @@
       <div class="note">Riceverai una conferma. In caso di ritardo superiore a 15 minuti, il tavolo potrebbe essere riassegnato.</div>
     </form>
 
-    <div class="success" id="closedBox" style="display:none;">
-      <div class="icon" style="background:var(--accent);">✕</div>
-      <h2>Reservas online cerradas</h2>
-      <p>En este momento no aceptamos reservas por internet.</p>
-      <p style="margin-top:14px;">Llámanos al <a class="tel" href="tel:+34646820078">+34 646 820 078</a></p>
-      <p style="font-size:13px;color:#888;margin-top:14px;">Prenotazioni online momentaneamente chiuse. Chiamaci al numero qui sopra.</p>
-    </div>
-
     <div class="success" id="successBox" style="display:none;">
       <div class="icon">✓</div>
       <h2>Prenotazione ricevuta!</h2>
@@ -262,13 +254,6 @@
 
   <footer>Teperino Fuerte · Calle ... El Cotillo, Fuerteventura</footer>
 </div>
-
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<script>
-  if(typeof emailjs !== 'undefined'){
-    emailjs.init("mLHtEDkWM1RTATylU");
-  }
-</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -287,12 +272,22 @@ const firebaseConfig = {
 };
 // ======================================================
 
-// ====== EMAILJS (notifica email ad ogni prenotazione) ======
-const EMAILJS_PUBLIC_KEY = "mLHtEDkWM1RTATylU";
-const EMAILJS_SERVICE_ID = "service_97btwgi";
-const EMAILJS_TEMPLATE_ID = "template_aka6vs8";
-const NOTIFY_EMAIL = "ltepe69@gmail.com";
+// ====== CONFIGURA QUI EMAILJS (per la notifica email) ======
+const EMAILJS_PUBLIC_KEY = "INSERISCI_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID = "INSERISCI_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "INSERISCI_TEMPLATE_ID";
+const NOTIFY_EMAIL = "inserisci@tuaemail.com";
 // =============================================================
+
+// ====== NOTIFICA PUSH SUL TELEFONO (ntfy.sh) ======
+const NTFY_TOPIC = "teperino-fuerte-c171db64c9f9a0187353dc75";
+// ==================================================
+
+if(firebaseConfig.databaseURL.startsWith("INSERISCI") || firebaseConfig.databaseURL.includes("INSERISCI")){
+  document.querySelector('.card').innerHTML =
+    '<div class="error-msg" style="display:block;">Configurazione mancante: questa pagina non è ancora collegata al database. Contatta chi gestisce il sito.</div>';
+  throw new Error("databaseURL non configurato.");
+}
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -353,15 +348,14 @@ async function loadSettings(){
     settings = {
       schedule: s.schedule || defaultSchedule(),
       maxCoversPerSlot: s.maxCoversPerSlot || 30,
-      closedDates: s.closedDates || [],
-      bookingsOpen: s.bookingsOpen !== false   // default: aperte
+      closedDates: s.closedDates || []
     };
   } else {
+    // valori di default se non hai ancora configurato nulla dal pannello admin
     settings = {
       schedule: defaultSchedule(),
       maxCoversPerSlot: 30,
-      closedDates: [],
-      bookingsOpen: true
+      closedDates: []
     };
   }
 }
@@ -471,17 +465,27 @@ form.addEventListener('submit', async (e)=>{
 
     await push(ref(db, "reservations"), payload);
 
-    // notifica email via EmailJS
+    // notifica push sul telefono del titolare (ntfy.sh)
     try{
-      if(window.emailjs){
+      const d = payload.date.split('-').reverse().join('/');
+      fetch("https://ntfy.sh/" + NTFY_TOPIC, {
+        method: "POST",
+        headers: { "Title": "Nuova prenotazione Teperino", "Priority": "high", "Tags": "pizza,bell" },
+        body: d + " ore " + payload.time + " - " + payload.people + " pers. - " + payload.name + " - " + payload.phone + (payload.notes ? " - " + payload.notes : "")
+      }).catch(()=>{});
+    }catch(e){ console.warn("ntfy", e); }
+
+    // notifica email via EmailJS (facoltativa: se non configurato, viene solo loggato l'errore)
+    try{
+      if(window.emailjs && EMAILJS_PUBLIC_KEY !== "INSERISCI_PUBLIC_KEY"){
         await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
-          nome_cliente: payload.name,
-          telefono: payload.phone,
-          email: payload.email,
-          data: payload.date,
-          ora: payload.time,
-          numero_persone: payload.people,
-          note: payload.notes
+          to_email: NOTIFY_EMAIL,
+          name: payload.name,
+          phone: payload.phone,
+          people: payload.people,
+          date: payload.date,
+          time: payload.time,
+          notes: payload.notes
         });
       }
     }catch(mailErr){
@@ -500,15 +504,15 @@ form.addEventListener('submit', async (e)=>{
   }
 });
 
-// Avvio: se le prenotazioni sono chiuse, nascondo il form e mostro il messaggio
-loadSettings().then(()=>{
-  if(settings.bookingsOpen === false){
-    form.style.display = 'none';
-    document.getElementById('closedBox').style.display = 'block';
-    return;
+loadSettings().then(renderSlots);
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  // NB: ripeti qui la stessa public key inserita sopra nello script module
+  if(typeof emailjs !== 'undefined'){
+    emailjs.init("INSERISCI_PUBLIC_KEY");
   }
-  renderSlots();
-});
 </script>
 
 </body>
